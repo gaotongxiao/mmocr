@@ -1,5 +1,22 @@
 <div align="center">
   <img src="resources/mmocr-logo.png" width="500px"/>
+  <div>&nbsp;</div>
+  <div align="center">
+    <b><font size="5">OpenMMLab 官网</font></b>
+    <sup>
+      <a href="https://openmmlab.com">
+        <i><font size="4">HOT</font></i>
+      </a>
+    </sup>
+    &nbsp;&nbsp;&nbsp;&nbsp;
+    <b><font size="5">OpenMMLab 开放平台</font></b>
+    <sup>
+      <a href="https://platform.openmmlab.com">
+        <i><font size="4">TRY IT OUT</font></i>
+      </a>
+    </sup>
+  </div>
+  <div>&nbsp;</div>
 </div>
 
 ## 简介
@@ -107,8 +124,7 @@ MMOCR 是基于 PyTorch 和 mmdetection 的开源工具箱，专注于文本检�
 
 ## 更新日志
 
-最新的月度版本 v0.4.0 在 2021.12.15 发布。
-
+最新的月度版本 v0.4.1 在 2022.01.27 发布。
 
 ## 安装
 
@@ -143,6 +159,9 @@ MMOCR 是一款由来自不同高校和企业的研发人员共同参与贡献�
 - [MMFlow](https://github.com/open-mmlab/mmflow): OpenMMLab 光流估计工具箱与测试基准
 - [MMFewShot](https://github.com/open-mmlab/mmfewshot): OpenMMLab 少样本学习工具箱与测试基准
 - [MMHuman3D](https://github.com/open-mmlab/mmhuman3d): OpenMMLab 人体参数化模型工具箱与测试基准
+- [MMSelfSup](https://github.com/open-mmlab/mmselfsup): OpenMMLab 自监督学习工具箱与测试基准
+- [MMRazor](https://github.com/open-mmlab/mmrazor): OpenMMLab 模型压缩工具箱与测试基准
+- [MMDeploy](https://github.com/open-mmlab/mmdeploy): OpenMMLab 模型部署框架
 
 ## 欢迎加入 OpenMMLab 社区
 

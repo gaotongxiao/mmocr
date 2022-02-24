@@ -24,6 +24,13 @@ for f in files:
     with open(f, 'r') as content_file:
         content = content_file.read()
 
+    # Remove the blackquote notation from the paper link under the title
+    # for better layout in readthedocs
+    expr = r'(^## \s*?.*?\s+?)>\s*?(\[.*?\]\(.*?\))'
+    content = re.sub(expr, r'\1\2', content, flags=re.MULTILINE)
+    with open(f, 'w') as content_file:
+        content_file.write(content)
+
     # title
     title = content.split('\n')[0].replace('#', '')
 
@@ -80,7 +87,7 @@ countstr = '\n'.join(
     [f'   - {t}: {c}' for t, c in zip(papertypes, papercounts)])
 
 modelzoo = f"""
-# 概览
+# 统计数据
 
 * 模型权重文件数量： {len(allckpts)}
 * 配置文件数量： {len(allconfigs)}

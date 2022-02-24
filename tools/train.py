@@ -17,7 +17,8 @@ from mmocr import __version__
 from mmocr.apis import init_random_seed, train_detector
 from mmocr.datasets import build_dataset
 from mmocr.models import build_detector
-from mmocr.utils import collect_env, get_root_logger
+from mmocr.utils import (collect_env, get_root_logger, is_2dlist,
+                         setup_multi_processes)
 
 
 def parse_args():
@@ -36,14 +37,20 @@ def parse_args():
     group_gpus.add_argument(
         '--gpus',
         type=int,
-        help='Number of gpus to use '
+        help='(Deprecated, please use --gpu-id) number of gpus to use '
         '(only applicable to non-distributed training).')
     group_gpus.add_argument(
         '--gpu-ids',
         type=int,
         nargs='+',
-        help='ids of gpus to use '
-        '(only applicable to non-distributed training).')
+        help='(Deprecated, please use --gpu-id) ids of gpus to use '
+        '(only applicable to non-distributed training)')
+    group_gpus.add_argument(
+        '--gpu-id',
+        type=int,
+        default=0,
+        help='id of gpu to use '
+        '(only applicable to non-distributed training)')
     parser.add_argument('--seed', type=int, default=None, help='Random seed.')
     parser.add_argument(
         '--deterministic',
@@ -72,11 +79,6 @@ def parse_args():
         default='none',
         help='Options for job launcher.')
     parser.add_argument('--local_rank', type=int, default=0)
-    parser.add_argument(
-        '--mc-config',
-        type=str,
-        default='',
-        help='Memory cache config for image loading speed-up during training.')
 
     args = parser.parse_args()
     if 'LOCAL_RANK' not in os.environ:
@@ -100,16 +102,7 @@ def main():
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
 
-    # update mc config
-    if args.mc_config:
-        mc = Config.fromfile(args.mc_config)
-        if isinstance(cfg.data.train, list):
-            for i in range(len(cfg.data.train)):
-                cfg.data.train[i].pipeline[0].update(
-                    file_client_args=mc['mc_file_client_args'])
-        else:
-            cfg.data.train.pipeline[0].update(
-                file_client_args=mc['mc_file_client_args'])
+    setup_multi_processes(cfg)
 
     # set cudnn_benchmark
     if cfg.get('cudnn_benchmark', False):
@@ -127,10 +120,19 @@ def main():
         cfg.load_from = args.load_from
     if args.resume_from is not None:
         cfg.resume_from = args.resume_from
+    if args.gpus is not None:
+        cfg.gpu_ids = range(1)
+        warnings.warn('`--gpus` is deprecated because we only support '
+                      'single GPU mode in non-distributed training. '
+                      'Use `gpus=1` now.')
     if args.gpu_ids is not None:
-        cfg.gpu_ids = args.gpu_ids
-    else:
-        cfg.gpu_ids = range(1) if args.gpus is None else range(args.gpus)
+        cfg.gpu_ids = args.gpu_ids[0:1]
+        warnings.warn('`--gpu-ids` is deprecated, please use `--gpu-id`. '
+                      'Because we only support single GPU mode in '
+                      'non-distributed training. Use the first GPU '
+                      'in `gpu_ids` now.')
+    if args.gpus is None and args.gpu_ids is None:
+        cfg.gpu_ids = [args.gpu_id]
 
     # init distributed env first, since logger depends on the dist info.
     if args.launcher == 'none':
@@ -184,12 +186,17 @@ def main():
     datasets = [build_dataset(cfg.data.train)]
     if len(cfg.workflow) == 2:
         val_dataset = copy.deepcopy(cfg.data.val)
-        if cfg.data.train['type'] == 'ConcatDataset':
-            train_pipeline = cfg.data.train['datasets'][0].pipeline
+        if cfg.data.train.get('pipeline', None) is None:
+            if is_2dlist(cfg.data.train.datasets):
+                train_pipeline = cfg.data.train.datasets[0][0].pipeline
+            else:
+                train_pipeline = cfg.data.train.datasets[0].pipeline
+        elif is_2dlist(cfg.data.train.pipeline):
+            train_pipeline = cfg.data.train.pipeline[0]
         else:
             train_pipeline = cfg.data.train.pipeline
 
-        if val_dataset['type'] == 'ConcatDataset':
+        if val_dataset['type'] in ['ConcatDataset', 'UniformConcatDataset']:
             for dataset in val_dataset['datasets']:
                 dataset.pipeline = train_pipeline
         else:

@@ -3,7 +3,6 @@ from argparse import ArgumentParser
 
 from mmocr.apis import init_detector
 from mmocr.apis.inference import text_model_inference
-
 from mmocr.datasets import build_dataset  # NOQA
 from mmocr.models import build_detector  # NOQA
 
@@ -18,9 +17,6 @@ def main():
 
     # build the model from a config file and a checkpoint file
     model = init_detector(args.config, args.checkpoint, device=args.device)
-    if model.cfg.data.test['type'] == 'ConcatDataset':
-        model.cfg.data.test.pipeline = model.cfg.data.test['datasets'][
-            0].pipeline
 
     # test a single text
     input_sentence = input('Please enter a sentence you want to test: ')

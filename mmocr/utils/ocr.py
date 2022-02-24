@@ -111,7 +111,7 @@ def parse_args():
         default=0,
         help='Batch size for separate det/recog inference')
     parser.add_argument(
-        '--device', default='cuda:0', help='Device used for inference.')
+        '--device', default=None, help='Device used for inference.')
     parser.add_argument(
         '--export',
         type=str,
@@ -174,7 +174,7 @@ class MMOCR:
                  kie_config='',
                  kie_ckpt='',
                  config_dir=os.path.join(str(Path.cwd()), 'configs/'),
-                 device='cuda:0',
+                 device=None,
                  **kwargs):
 
         textdet_models = {
@@ -328,6 +328,9 @@ class MMOCR:
         self.tr = recog
         self.kie = kie
         self.device = device
+        if self.device is None:
+            self.device = torch.cuda.current_device() \
+                if torch.cuda.is_available() else 'cpu'
 
         # Check if the det/recog model choice is valid
         if self.td and self.td not in textdet_models:
@@ -396,9 +399,6 @@ class MMOCR:
         for model in list(filter(None, [self.recog_model, self.detect_model])):
             if hasattr(model, 'module'):
                 model = model.module
-            if model.cfg.data.test['type'] == 'ConcatDataset':
-                model.cfg.data.test.pipeline = \
-                    model.cfg.data.test['datasets'][0].pipeline
 
     def readtext(self,
                  img,
