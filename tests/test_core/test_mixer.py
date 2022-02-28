@@ -17,6 +17,7 @@ def test_mixer():
              [1, 0, 1, 1, 2, 0, 2, 1]]))
     gt_inds = torch.LongTensor([1, 0, -1, 1, 2])
 
+    # In training mode, add_gt is True, pred_results and gt_indexes are given
     mixer = Mixer(pred_keys=['bboxes'], add_gt=True)
     new_img_metas = mixer.mix_gt_pred(img_metas, pred_results, gt_inds)
     target_bboxes = torch.FloatTensor([[0.5, 0.5, 0, 1, 1, 0, 1, 1],
@@ -27,13 +28,24 @@ def test_mixer():
     target_texts = ['hello', 'hello', 'world', 'hello', 'world']
     assert torch.allclose(new_img_metas['bboxes'], target_bboxes)
     assert target_texts == new_img_metas['texts']
-    assert all([new_img_metas['filename'] == 'test.jpg'])
+    assert new_img_metas['filename'] == 'test.jpg'
 
+    # In training mode, add_gt is True, pred_results are given
     new_img_metas = mixer.mix_gt_pred(img_metas, pred_results)
+    target_bboxes = torch.FloatTensor([[0, 0, 0, 1, 1, 0, 1, 1],
+                                       [1, 0, 1, 1, 2, 0, 2, 1]])
+    target_texts = ['hello', 'world']
+    assert torch.allclose(new_img_metas['bboxes'], target_bboxes)
+    assert target_texts == new_img_metas['texts']
+    assert new_img_metas['filename'] == 'test.jpg'
+
+    # In test mode, add_gt is True, pred_results are given
+    new_img_metas = mixer.mix_gt_pred(img_metas, pred_results, testing=True)
     target_bboxes = pred_results['bboxes']
     assert torch.allclose(new_img_metas['bboxes'], target_bboxes)
-    assert all([new_img_metas['filename'] == 'test.jpg'])
+    assert new_img_metas['filename'] == 'test.jpg'
 
+    # In training mode, add_gt is False, pred_results and gt_inds are given
     mixer = Mixer(pred_keys=['bboxes'], add_gt=False)
     gt_inds = torch.LongTensor([-1, -1, 2, 2, 1])
     new_img_metas = mixer.mix_gt_pred(img_metas, pred_results, gt_inds)

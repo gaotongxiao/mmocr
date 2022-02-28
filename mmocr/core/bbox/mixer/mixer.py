@@ -30,7 +30,11 @@ class Mixer:
         self.pred_keys = pred_keys
         self.add_gt = add_gt
 
-    def mix_gt_pred(self, img_metas, pred_results, gt_inds=None):
+    def mix_gt_pred(self,
+                    img_metas,
+                    pred_results,
+                    gt_inds=None,
+                    testing=False):
         """
         Args:
             img_metas (dict): The original "img_metas".
@@ -40,6 +44,7 @@ class Mixer:
                 results from the assigner. Its length should be equal to the
                 number of predicted boxes in ``pred_results``. If None, Mixer
                 works in the test mode.
+            test (bool):
 
         Returns:
             dict: New ``img_metas`` for text recognizers.
@@ -47,10 +52,12 @@ class Mixer:
 
         self.new_img_metas = {}
         self.img_metas = img_metas
-        self._extract_pred(pred_results, gt_inds)
+
+        if testing or gt_inds is not None:
+            self._extract_pred(pred_results, gt_inds)
 
         # Only add gt instances for training
-        if self.add_gt and gt_inds is not None:
+        if not testing and self.add_gt:
             self.merge_img_metas(self.img_metas)
         return self.new_img_metas
 
