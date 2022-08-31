@@ -222,88 +222,6 @@ class MMOCR:
             print_result=print_result,
             pred_out_file=pred_out_file)
 
-    # def postprocess(
-    #         self,
-    #         img_path: str,
-    #         det_results: Optional[TextDetDataSample] = None,
-    #         recog_results: Optional[Union[TextRecogDataSample,
-    #                                       List[TextRecogDataSample]]] = None,
-    #         kie_results: Optional[KIEDataSample] = None,
-    #         visualizer: Optional[Union[TextRecogLocalVisualizer,
-    #                                    TextDetLocalVisualizer]] = None,
-    #         out_dir: str = None,
-    #         imshow: bool = False,
-    #         print_result: bool = False,
-    #         mode: str = 'e2e'):
-    #     """Postprocess the results.
-
-    #     Args:
-    #         img_path (str): Path to the image.
-    #         det_results (TextDetDataSample, optional): Detection results.
-    #             Defaults to None.
-    #         recog_results (TextRecogDataSample or List[TextRecogDataSample],
-    #             optional): Recognition results. Defaults to None.
-    #         kie_results (KIEDataSample, optional): Kie results. Defaults to
-    #             None.
-    #         visualizer (Optional[Union[TextRecogLocalVisualizer,
-    #                                     TextDetLocalVisualizer]]):
-    # A visualizer
-    #         out_dir (str): Path to the output directory.
-    #         imshow (bool): Whether to show the results.
-    #         print_result (bool): Whether to print the results.
-    #         mode (str): Mode for inference in [``det``, ``recog``, ``e2e``,
-    #             ``kie``].
-    #     """
-    #     # Get original image
-    #     img = mmcv.imread(img_path)
-    #     img_name = os.path.basename(img_path)
-    #     if out_dir:
-    #         out_dir = os.path.join(out_dir, img_name)
-    #     if mode == 'det':
-    #         visualizer.add_datasample(
-    #             img_name,
-    #             img,
-    #             pred_sample=det_results[0],
-    #             show=imshow,
-    #             out_file=out_dir)
-    #     elif mode == 'recog':
-    #         visualizer.add_datasample(
-    #             img_name,
-    #             img,
-    #             pred_sample=recog_results[0],
-    #             show=imshow,
-    #             out_file=out_dir)
-    #     elif mode == 'e2e':
-    #         res_img = det_recog_show_result(
-    #             img, det_results, recog_results, out_file=out_dir)
-    #         if imshow:
-    #             mmcv.imshow(res_img, 'inference results')
-
-    #     if print_result:
-    #         print('-' * 60)
-    #         print('img path:', img_path)
-    #         # Det only print
-    #         if mode == 'det':
-    #             polygons = det_results[0].pred_instances.polygons
-    #             scores = det_results[0].pred_instances.scores
-    #             for polygon, score in zip(polygons, scores):
-    #                 print(f'polygon: {polygon}, score: {score}')
-    #         elif mode == 'recog':
-    #             print(f'text: {recog_results[0].pred_text.item}, '
-    #                   f'score: {recog_results[0].pred_text.score}')
-    #         elif mode == 'e2e':
-    #             polygons = det_results[0].pred_instances.polygons
-    #             det_scores = det_results[0].pred_instances.scores
-    #             texts = []
-    #             text_scores = []
-    #             for i, polygon in enumerate(polygons):
-    #                 texts.append(recog_results[i].pred_text.item)
-    #                 text_scores.append(recog_results[i].pred_text.score)
-    #             for polygon, det_score, text, text_score in zip(
-    #                     polygons, det_scores, texts, text_scores):
-    #                 print(f'polygon: {polygon}, det_score: {det_score}, '
-    #                       f'text: {text}, text_score: {text_score}')
-
     def get_model_config(self, model_name: str) -> Dict:
         """Get the model configuration including model config and checkpoint
         url.
@@ -323,7 +241,9 @@ class MMOCR:
                 'ckpt':
                 'textdet/'
                 'dbnet/'
-                'dbnet_r18_fpnc_sbn_1200e_icdar2015_20210329-ba3ab597.pth'
+                'dbnet_resnet18_fpnc_1200e_icdar2015/'
+                'dbnet_resnet18_fpnc_1200e_icdar2015_20220825_221614-7c0e94f2.'
+                'pth'
             },
             'DB_r50': {
                 'config':
@@ -332,7 +252,9 @@ class MMOCR:
                 'ckpt':
                 'textdet/'
                 'dbnet/'
-                'dbnet_r50dcnv2_fpnc_sbn_1200e_icdar2015_20211025-9fe3b590.pth'
+                'dbnet_resnet50-dcnv2_fpnc_1200e_icdar2015/'
+                'dbnet_resnet50-dcnv2_fpnc_1200e_icdar2015_20220828_124917-'
+                '452c443c.pth'
             },
             'DBPP_r50': {
                 'config':
@@ -341,7 +263,9 @@ class MMOCR:
                 'ckpt':
                 'textdet/'
                 'dbnet/'
-                'dbnetpp_r50dcnv2_fpnc_1200e_icdar2015-20220502-d7a76fff.pth'
+                'dbnetpp_resnet50-dcnv2_fpnc_1200e_icdar2015/'
+                'dbnetpp_resnet50-dcnv2_fpnc_1200e_icdar2015_20220829_230108-'
+                'f289bd20.pth'
             },
             'DRRG': {
                 'config':
@@ -349,7 +273,10 @@ class MMOCR:
                 'drrg/drrg_resnet50_fpn-unet_1200e_ctw1500.py',
                 'ckpt':
                 'textdet/'
-                'drrg/drrg_r50_fpn_unet_1200e_ctw1500_20211022-fb30b001.pth'
+                'drrg/'
+                'drrg_resnet50_fpn-unet_1200e_ctw1500/'
+                'drrg_resnet50_fpn-unet_1200e_ctw1500_20220827_105233-d5c702dd'
+                '.pth'
             },
             'FCE_IC15': {
                 'config':
@@ -357,7 +284,9 @@ class MMOCR:
                 'fcenet/fcenet_resnet50_fpn_1500e_icdar2015.py',
                 'ckpt':
                 'textdet/'
-                'fcenet/fcenet_r50_fpn_1500e_icdar2015_20211022-daefb6ed.pth'
+                'fcenet/fcenet_resnet50_fpn_1500e_icdar2015/'
+                'fcenet_resnet50_fpn_1500e_icdar2015_20220826_140941-167d9042'
+                '.pth'
             },
             'FCE_CTW_DCNv2': {
                 'config':
@@ -365,8 +294,9 @@ class MMOCR:
                 'fcenet/fcenet_resnet50-dcnv2_fpn_1500e_ctw1500.py',
                 'ckpt':
                 'textdet/'
-                'fcenet/'
-                'fcenet_r50dcnv2_fpn_1500e_ctw1500_20211022-e326d7ec.pth'
+                'fcenet/fcenet_resnet50-dcnv2_fpn_1500e_ctw1500/'
+                'fcenet_resnet50-dcnv2_fpn_1500e_ctw1500_20220825_221510-'
+                '4d705392.pth'
             },
             'MaskRCNN_CTW': {
                 'config':
@@ -375,7 +305,9 @@ class MMOCR:
                 'ckpt':
                 'textdet/'
                 'maskrcnn/'
-                'mask_rcnn_r50_fpn_160e_ctw1500_20210219-96497a76.pth'
+                'mask-rcnn_resnet50_fpn_160e_ctw1500/'
+                'mask-rcnn_resnet50_fpn_160e_ctw1500_20220826_154755-ce68ee8e.'
+                'pth'
             },
             'MaskRCNN_IC15': {
                 'config':
@@ -384,17 +316,19 @@ class MMOCR:
                 'ckpt':
                 'textdet/'
                 'maskrcnn/'
-                'mask_rcnn_r50_fpn_160e_icdar2015_20210219-8eb340a3.pth'
+                'mask-rcnn_resnet50_fpn_160e_icdar2015/'
+                'mask-rcnn_resnet50_fpn_160e_icdar2015_20220826_154808-'
+                'ff5c30bf.pth'
             },
-            'MaskRCNN_IC17': {
-                'config':
-                'textdet/'
-                'maskrcnn/mask-rcnn_resnet50_fpn_160e_icdar2017.py',
-                'ckpt':
-                'textdet/'
-                'maskrcnn/'
-                'mask_rcnn_r50_fpn_160e_icdar2017_20210218-c6ec3ebb.pth'
-            },
+            # 'MaskRCNN_IC17': {
+            #     'config':
+            #     'textdet/'
+            #     'maskrcnn/mask-rcnn_resnet50_fpn_160e_icdar2017.py',
+            #     'ckpt':
+            #     'textdet/'
+            #     'maskrcnn/'
+            #     'mask_rcnn_r50_fpn_160e_icdar2017_20210218-c6ec3ebb.pth'
+            # },
             'PANet_CTW': {
                 'config':
                 'textdet/'
@@ -402,7 +336,9 @@ class MMOCR:
                 'ckpt':
                 'textdet/'
                 'panet/'
-                'panet_r18_fpem_ffm_sbn_600e_ctw1500_20210219-3b3a9aa3.pth'
+                'panet_resnet18_fpem-ffm_600e_ctw1500/'
+                'panet_resnet18_fpem-ffm_600e_ctw1500_20220826_144818-980f32d0'
+                '.pth'
             },
             'PANet_IC15': {
                 'config':
@@ -411,7 +347,8 @@ class MMOCR:
                 'ckpt':
                 'textdet/'
                 'panet/'
-                'panet_r18_fpem_ffm_sbn_600e_icdar2015_20210219-42dbe46a.pth'
+                'panet_resnet18_fpem-ffm_600e_icdar2015/panet_resnet18_fpem-'
+                'ffm_600e_icdar2015_20220826_144817-be2acdb4.pth'
             },
             'PS_CTW': {
                 'config':
@@ -419,7 +356,9 @@ class MMOCR:
                 'psenet/psenet_resnet50_fpnf_600e_ctw1500.py',
                 'ckpt':
                 'textdet/'
-                'psenet/psenet_r50_fpnf_600e_ctw1500_20210401-216fed50.pth'
+                'psenet/psenet_resnet50_fpnf_600e_ctw1500/'
+                'psenet_resnet50_fpnf_600e_ctw1500_20220825_221459-7f974ac8.'
+                'pth'
             },
             'PS_IC15': {
                 'config':
@@ -427,7 +366,10 @@ class MMOCR:
                 'psenet/psenet_resnet50_fpnf_600e_icdar2015.py',
                 'ckpt':
                 'textdet/'
-                'psenet/psenet_r50_fpnf_600e_icdar2015_pretrain-eefd8fe6.pth'
+                'psenet/'
+                'psenet_resnet50_fpnf_600e_icdar2015/'
+                'psenet_resnet50_fpnf_600e_icdar2015_20220825_222709-b6741ec3.'
+                'pth'
             },
             'TextSnake': {
                 'config':
@@ -435,20 +377,23 @@ class MMOCR:
                 'textsnake/textsnake_resnet50_fpn-unet_1200e_ctw1500.py',
                 'ckpt':
                 'textdet/'
-                'textsnake/textsnake_r50_fpn_unet_1200e_ctw1500-27f65b64.pth'
+                'textsnake/'
+                'textsnake_resnet50_fpn-unet_1200e_ctw1500/'
+                'textsnake_resnet50_fpn-unet_1200e_ctw1500_20220825_221459-'
+                'c0b6adc4.pth'
             },
             # Recognition models
             'CRNN': {
                 'config': 'textrecog/crnn/crnn_mini-vgg_5e_mj.py',
                 'ckpt': 'textrecog/crnn/crnn_academic-a723a1c5.pth'
             },
-            'SAR': {
-                'config':
-                'textrecog/sar/'
-                'sar_resnet31_parallel-decoder_5e_st-sub_mj-sub_sa_real.py',
-                'ckpt':
-                'textrecog/sar/sar_r31_parallel_decoder_academic-dba3a4a3.pth'
-            },
+            # 'SAR': {
+            #     'config':
+            #     'textrecog/sar/'
+            #     'sar_resnet31_parallel-decoder_5e_st-sub_mj-sub_sa_real.py',
+            #     'ckpt':
+            #     'textrecog/sar/sar_r31_parallel_decoder_academic-dba3a4a3.pth'
+            # },
             # 'SAR_CN': {
             #     'config':
             #     'textrecog/'
@@ -457,62 +402,64 @@ class MMOCR:
             #     'textrecog/'
             #     'sar/sar_r31_parallel_decoder_chineseocr_20210507-b4be8214.pth'
             # },
-            'NRTR_1/16-1/8': {
-                'config':
-                'textrecog/'
-                'nrtr/nrtr_resnet31-1by16-1by8_6e_st_mj.py',
-                'ckpt':
-                'textrecog/'
-                'nrtr/nrtr_r31_1by16_1by8_academic_20211124-f60cebf4.pth'
-            },
-            'NRTR_1/8-1/4': {
-                'config':
-                'textrecog/'
-                'nrtr/nrtr_resnet31-1by8-1by4_6e_st_mj.py',
-                'ckpt':
-                'textrecog/'
-                'nrtr/nrtr_r31_1by8_1by4_academic_20211123-e1fdb322.pth'
-            },
-            'RobustScanner': {
-                'config':
-                'textrecog/robust_scanner/'
-                'robustscanner_resnet31_5e_st-sub_mj-sub_sa_real.py',
-                'ckpt':
-                'textrecog/'
-                'robustscanner/robustscanner_r31_academic-5f05874f.pth'
-            },
-            'SATRN': {
-                'config': 'textrecog/satrn/satrn_shallow_5e_st_mj.py',
-                'ckpt': 'textrecog/satrn/satrn_academic_20211009-cb8b1580.pth'
-            },
-            'SATRN_sm': {
-                'config': 'textrecog/satrn/satrn_shallow-small_5e_st_mj.py',
-                'ckpt': 'textrecog/satrn/satrn_small_20211009-2cf13355.pth'
-            },
-            'ABINet': {
-                'config': 'textrecog/abinet/abinet_20e_st-an_mj.py',
-                'ckpt': 'textrecog/abinet/abinet_academic-f718abf6.pth'
-            },
-            'ABINet_Vision': {
-                'config': 'abinet/abinet-vision_20e_st-an_mj.py',
-                'ckpt': 'abinet/abinet_vision_only_academic-e6b9ea89.pth'
-            },
+            # 'NRTR_1/16-1/8': {
+            #     'config':
+            #     'textrecog/'
+            #     'nrtr/nrtr_resnet31-1by16-1by8_6e_st_mj.py',
+            #     'ckpt':
+            #     'textrecog/'
+            #     'nrtr/nrtr_r31_1by16_1by8_academic_20211124-f60cebf4.pth'
+            # },
+            # 'NRTR_1/8-1/4': {
+            #     'config':
+            #     'textrecog/'
+            #     'nrtr/nrtr_resnet31-1by8-1by4_6e_st_mj.py',
+            #     'ckpt':
+            #     'textrecog/'
+            #     'nrtr/nrtr_r31_1by8_1by4_academic_20211123-e1fdb322.pth'
+            # },
+            # 'RobustScanner': {
+            #     'config':
+            #     'textrecog/robust_scanner/'
+            #     'robustscanner_resnet31_5e_st-sub_mj-sub_sa_real.py',
+            #     'ckpt':
+            #     'textrecog/'
+            #     'robustscanner/robustscanner_r31_academic-5f05874f.pth'
+            # },
+            # 'SATRN': {
+            #     'config': 'textrecog/satrn/satrn_shallow_5e_st_mj.py',
+            #    'ckpt': 'textrecog/satrn/satrn_academic_20211009-cb8b1580.pth'
+            # },
+            # 'SATRN_sm': {
+            #     'config': 'textrecog/satrn/satrn_shallow-small_5e_st_mj.py',
+            #     'ckpt': 'textrecog/satrn/satrn_small_20211009-2cf13355.pth'
+            # },
+            # 'ABINet': {
+            #     'config': 'textrecog/abinet/abinet_20e_st-an_mj.py',
+            #     'ckpt': 'textrecog/abinet/abinet_academic-f718abf6.pth'
+            # },
+            # 'ABINet_Vision': {
+            #     'config': 'abinet/abinet-vision_20e_st-an_mj.py',
+            #     'ckpt': 'abinet/abinet_vision_only_academic-e6b9ea89.pth'
+            # },
             # 'CRNN_TPS': {
             #     'config':
             #     'textrecog/tps/crnn_tps_academic_dataset.py',
             #     'ckpt':
             #     'textrecog/tps/crnn_tps_academic_dataset_20210510-d221a905.pth'
             # },
-            'MASTER': {
-                'config': 'textrecog/master/master_resnet31_12e_st_mj_sa.py',
-                'ckpt': 'textrecog/master/master_r31_12e_ST_MJ_SA-787edd36.pth'
-            },
+            # 'MASTER': {
+            #     'config': 'textrecog/master/master_resnet31_12e_st_mj_sa.py',
+            #   'ckpt': 'textrecog/master/master_r31_12e_ST_MJ_SA-787edd36.pth'
+            # },
             # KIE models
             'SDMGR': {
                 'config':
                 'kie/sdmgr/sdmgr_unet16_60e_wildreceipt.py',
                 'ckpt':
-                'kie/sdmgr/sdmgr_unet16_60e_wildreceipt_20210520-7489e6de.pth'
+                'kie/sdmgr/'
+                'sdmgr_unet16_60e_wildreceipt/'
+                'sdmgr_unet16_60e_wildreceipt_20220825_151648-22419f37.pth'
             }
         }
         if model_name not in model_dict:

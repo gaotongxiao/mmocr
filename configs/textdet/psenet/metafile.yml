@@ -37,4 +37,4 @@ Models:
         Dataset: ICDAR2015
         Metrics:
           hmean-iou: 0.7998
-    Weights:
+    Weights: https://download.openmmlab.com/mmocr/textdet/psenet/psenet_resnet50_fpnf_600e_icdar2015/psenet_resnet50_fpnf_600e_icdar2015_20220825_222709-b6741ec3.pth
