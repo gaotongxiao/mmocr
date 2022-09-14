@@ -255,6 +255,8 @@ class BaseMMOCRInferencer(BaseInferencer):
             mmcv.dump(results, pred_out_file)
         if imgs is None:
             return results
+        elif not is_batch:
+            imgs = imgs[0]
         return results, imgs
 
     def _pred2dict(self, data_sample: InstanceData) -> Dict:
