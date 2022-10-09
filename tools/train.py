@@ -4,12 +4,88 @@ import logging
 import os
 import os.path as osp
 
+from mmengine import ConfigDict
 from mmengine.config import Config, DictAction
 from mmengine.logging import print_log
 from mmengine.registry import RUNNERS
 from mmengine.runner import Runner
 
 from mmocr.utils import register_all_modules
+
+recog_root = 'openmmlab:s3://openmmlab/datasets/ocr/recog/'
+det_root = 'openmmlab:s3://openmmlab/datasets/ocr/det/'
+
+
+def update_data_root(cfg: ConfigDict, dataloader_key: str, new_data_root: str):
+    # TODO: It's just about to work. Need more check and test in the future.
+    if not isinstance(cfg[dataloader_key], list):
+        # Applicable to ConcatDataset only
+        for i in range(len(cfg[dataloader_key].dataset.datasets)):
+            data_root = cfg[dataloader_key].dataset.datasets[i].data_root
+            if data_root[-1] == '/':
+                data_root = data_root[:-1]
+            data_root_base = osp.basename(data_root)
+            if data_root_base not in ['det', 'rec']:
+                # e.g. data/det/icdar2015
+                cfg[dataloader_key].dataset.datasets[i].data_root = osp.join(
+                    new_data_root, data_root_base)
+            else:
+                # e.g. data/rec
+                cfg[dataloader_key].dataset.datasets[
+                    i].data_root = new_data_root
+
+    else:
+        # Applicable to MultiEvalLoop where each dataloader takes one dataset
+        for i in range(len(cfg[dataloader_key])):
+            data_root = cfg[dataloader_key][i].dataset.data_root
+            if data_root[-1] == '/':
+                data_root = data_root[:-1]
+            data_root_base = osp.basename(data_root)
+            if data_root_base not in ['det', 'rec']:
+                # e.g. data/det/icdar2015
+                cfg[dataloader_key][i].dataset.data_root = osp.join(
+                    new_data_root, data_root_base)
+            else:
+                # e.g. data/rec
+                cfg[dataloader_key][i].dataset.data_root = new_data_root
+
+
+def update_confg(config: str):
+    cfg = Config.fromfile(config)
+
+    # change file_client to petrel
+    cfg.train_dataloader.dataset.pipeline[0].file_client_args = dict(
+        backend='petrel')
+    if not isinstance(cfg.val_dataloader, list):
+        cfg.val_dataloader.dataset.pipeline[0].file_client_args = dict(
+            backend='petrel')
+    else:
+        for i in range(len(cfg.val_dataloader)):
+            cfg.val_dataloader[i].dataset.pipeline[0].file_client_args = dict(
+                backend='petrel')
+    if not isinstance(cfg.test_dataloader, list):
+        cfg.test_dataloader.dataset.pipeline[0].file_client_args = dict(
+            backend='petrel')
+    else:
+        for i in range(len(cfg.test_dataloader)):
+            cfg.test_dataloader[i].dataset.pipeline[0].file_client_args = dict(
+                backend='petrel')
+
+    # change data_root to ceph
+    if 'textdet' in config:
+        update_data_root(cfg, 'train_dataloader', det_root)
+        update_data_root(cfg, 'val_dataloader', det_root)
+        update_data_root(cfg, 'test_dataloader', det_root)
+
+    elif 'textrecog' in config:
+        update_data_root(cfg, 'train_dataloader', recog_root)
+        update_data_root(cfg, 'val_dataloader', recog_root)
+        update_data_root(cfg, 'test_dataloader', recog_root)
+        mmocr_path = osp.dirname(osp.dirname(osp.abspath(__file__)))
+        cfg.model.decoder.dictionary.dict_file = osp.join(
+            mmocr_path, cfg.model.decoder.dictionary.dict_file)
+
+    return cfg
 
 
 def parse_args():
@@ -59,7 +135,8 @@ def main():
     register_all_modules(init_default_scope=False)
 
     # load config
-    cfg = Config.fromfile(args.config)
+    # cfg = Config.fromfile(args.config)
+    cfg = update_confg(args.config)
     cfg.launcher = args.launcher
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)

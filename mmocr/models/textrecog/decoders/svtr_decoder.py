@@ -1,8 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import math
 from typing import Dict, List, Optional, Sequence, Union
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from mmocr.models.textrecog.dictionary import Dictionary
 from mmocr.registry import MODELS
@@ -43,9 +45,18 @@ class SVTRDecoder(BaseDecoder):
             max_seq_len=max_seq_len,
             init_cfg=init_cfg)
 
+        self.in_channels = in_channels
         self.decoder = nn.Linear(
             in_features=in_channels, out_features=self.dictionary.num_classes)
-        self.softmax = nn.Softmax(dim=-1)
+        # self.log_softmax =
+        self.apply(self._init_weights)
+        print('-----------decoder weight inits-------------------')
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            stdv = 1.0 / math.sqrt(self.in_channels * 1.0)
+            nn.init.uniform_(m.weight, -stdv, stdv)
+            nn.init.uniform_(m.bias, -stdv, stdv)
 
     def forward_train(
         self,
@@ -94,4 +105,5 @@ class SVTRDecoder(BaseDecoder):
             :math:`(N, self.max_seq_len, C)` where :math:`C` is
             ``num_classes``.
         """
-        return self.softmax(self.forward_train(feat, out_enc, data_samples))
+        feat = self.forward_train(feat, out_enc, data_samples).permute(1, 0, 2)
+        return F.log_softmax(feat, dim=2).requires_grad_()

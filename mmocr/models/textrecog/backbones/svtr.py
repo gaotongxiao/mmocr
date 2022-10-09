@@ -7,10 +7,32 @@ import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import ConvModule
 from mmcv.cnn.bricks import DropPath
-from mmcv.cnn.utils.weight_init import trunc_normal_
 from mmengine.model import BaseModule
+from mmengine.model.utils import trunc_normal_
 
 from mmocr.registry import MODELS
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+
+def truncated_normal_(tensor, mean=0, std=0.02):
+    with torch.no_grad():
+        size = tensor.size()
+        tmp = tensor.new_empty(size + (4, )).normal_().cuda()
+        valid = (tmp < 2) & (tmp > -2)
+        ind = valid.max(-1, keepdim=True)[1]
+        tensor.data.copy_(tmp.gather(-1, ind.cuda()).squeeze(-1))
+        tensor.data.mul_(std).add_(mean)
+        return tensor
+
+
+class Identity(nn.Module):
+
+    def __init__(self):
+        super(Identity, self).__init__()
+
+    def forward(self, input):
+        return input
 
 
 class OverlapPatchEmbed(BaseModule):
@@ -96,12 +118,12 @@ class ConvMixer(BaseModule):
         super().__init__(init_cfg)
         self.HW = HW
         self.embed_dims = embed_dims
-        self.window_size = ConvModule(
+        self.local_mixer = nn.Conv2d(
             in_channels=embed_dims,
             out_channels=embed_dims,
             kernel_size=local_k,
             stride=1,
-            padding=[local_k[0] // 2, local_k[1] // 2],
+            padding=(local_k[0] // 2, local_k[1] // 2),
             groups=num_heads)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -115,7 +137,7 @@ class ConvMixer(BaseModule):
         """
         h, w = self.HW
         x = x.permute(0, 2, 1).reshape([-1, self.embed_dims, h, w])
-        x = self.window_size(x)
+        x = self.local_mixer(x)
         x = x.flatten(2).permute(0, 2, 1)
         return x
 
@@ -161,20 +183,20 @@ class AttnMixer(BaseModule):
         self.proj_drop = nn.Dropout(proj_drop)
         self.HW = HW
         if HW is not None:
-            H, W = HW[0], HW[1]
+            H, W = HW
             self.N = H * W
             self.C = embed_dims
         if mixer == 'Local' and HW is not None:
             hk = local_k[0]
             wk = local_k[1]
             mask = torch.ones([H * W, H + hk - 1, W + wk - 1],
-                              dtype=torch.float32)
+                              dtype=torch.float32).to(device)
             for h in range(0, H):
                 for w in range(0, W):
                     mask[h * w + w, h:h + hk, w:w + wk] = 0.
             mask = mask[:, hk // 2:H + hk // 2, wk // 2:W + wk // 2].flatten(1)
-            mask[mask < -1] = -10000
-            self.mask = mask[None, None, :, :]
+            mask[mask < -1] = -np.inf
+            self.mask = mask[None, None, :, :].to(device)
         self.mixer = mixer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -269,7 +291,7 @@ class MixingBlock(BaseModule):
         qk_scale (float, optional): A scaling factor. Defaults to None.
         drop (float, optional): cfg of Dropout. Defaults to 0..
         attn_drop (float, optional): cfg of Dropout. Defaults to 0.0.
-        drop_path (_type_, optional): The probability of drop path.
+        drop_path (float, optional): The probability of drop path.
             Defaults to 0.0.
         pernorm (bool, optional): Whether to place the MxingBlock before norm.
             Defaults to True.
@@ -309,7 +331,7 @@ class MixingBlock(BaseModule):
                 embed_dims, num_heads=num_heads, HW=HW, local_k=window_size)
         else:
             raise TypeError('The mixer must be one of [Global, Local, Conv]')
-        self.drop_path = DropPath(drop_path)
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else Identity()
         self.norm2 = nn.LayerNorm(embed_dims, eps=1e-6)
         mlp_hidden_dim = int(embed_dims * mlp_ratio)
         self.mlp_ratio = mlp_ratio
@@ -366,7 +388,7 @@ class MerigingBlock(BaseModule):
                 kernel_size=[3, 5], stride=stride, padding=[1, 2])
             self.proj = nn.Linear(in_channels, out_channels)
         else:
-            self.conv = ConvModule(
+            self.conv = nn.Conv2d(
                 in_channels,
                 out_channels,
                 kernel_size=3,
@@ -401,7 +423,7 @@ class MerigingBlock(BaseModule):
         return out
 
 
-@MODELS.register_mudule()
+@MODELS.register_module()
 class SVTRNet(BaseModule):
     """A PyTorch implement of : `SVTR: Scene Text Recognition with a Single
         Visual Model <https://arxiv.org/abs/2205.00159>`_
@@ -487,7 +509,8 @@ class SVTRNet(BaseModule):
             img_size[0] // (2**num_layers), img_size[1] // (2**num_layers)
         ]
         self.absolute_pos_embed = nn.Parameter(
-            torch.zeros(1, num_patches, embed_dims[0]))
+            torch.zeros([1, num_patches, embed_dims[0]], dtype=torch.float32),
+            requires_grad=True)
         self.pos_drop = nn.Dropout(drop_rate)
         dpr = np.linspace(0, drop_path_rate, sum(depth))
 
@@ -562,13 +585,21 @@ class SVTRNet(BaseModule):
         self.hardwish = nn.Hardswish()
         self.dropout = nn.Dropout(p=last_drop)
 
-    def init_weights(self):
-        super(SVTRNet, self).init_weights()
-
-        if (isinstance(self.init_cfg, dict)
-                and self.init_cfg['type'] == 'Pretrained'):
-            return
         trunc_normal_(self.absolute_pos_embed)
+        self.apply(self._init_weights)
+        print('------------model weight inits-------------')
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            truncated_normal_(m.weight)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.zeros_(m.bias)
+        if isinstance(m, nn.LayerNorm):
+            nn.init.zeros_(m.bias)
+            nn.init.ones_(m.weight)
+        if isinstance(m, nn.Conv2d):
+            nn.init.kaiming_normal_(
+                m.weight, mode='fan_out', nonlinearity='relu')
 
     def forward_features(self, x: torch.Tensor) -> torch.Tensor:
         """Forward function except the last combing operation.
@@ -596,7 +627,8 @@ class SVTRNet(BaseModule):
 
         for blk in self.blocks3:
             x = blk(x)
-        x = self.layer_norm(x)
+        if not self.prenorm:
+            x = self.layer_norm(x)
         return x
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
