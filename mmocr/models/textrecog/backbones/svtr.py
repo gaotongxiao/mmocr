@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from mmcv.cnn import ConvModule
 from mmcv.cnn.bricks import DropPath
 from mmengine.model import BaseModule
-from mmengine.model.utils import trunc_normal_
+from mmengine.model.weight_init import trunc_normal_init
 
 from mmocr.registry import MODELS
 
@@ -18,10 +18,10 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 def truncated_normal_(tensor, mean=0, std=0.02):
     with torch.no_grad():
         size = tensor.size()
-        tmp = tensor.new_empty(size + (4, )).normal_().cuda()
+        tmp = tensor.new_empty(size + (4, )).normal_().to(device)
         valid = (tmp < 2) & (tmp > -2)
         ind = valid.max(-1, keepdim=True)[1]
-        tensor.data.copy_(tmp.gather(-1, ind.cuda()).squeeze(-1))
+        tensor.data.copy_(tmp.gather(-1, ind.to(device)).squeeze(-1))
         tensor.data.mul_(std).add_(mean)
         return tensor
 
@@ -190,13 +190,14 @@ class AttnMixer(BaseModule):
             hk = local_k[0]
             wk = local_k[1]
             mask = torch.ones([H * W, H + hk - 1, W + wk - 1],
-                              dtype=torch.float32).to(device)
+                              dtype=torch.float32)
             for h in range(0, H):
                 for w in range(0, W):
-                    mask[h * w + w, h:h + hk, w:w + wk] = 0.
-            mask = mask[:, hk // 2:H + hk // 2, wk // 2:W + wk // 2].flatten(1)
+                    mask[h * W + w, h:h + hk, w:w + wk] = 0.
+            mask = mask[:, hk // 2:H + hk // 2,
+                        wk // 2:W + wk // 2].flatten(1).to(device)
             mask[mask < -1] = -np.inf
-            self.mask = mask[None, None, :, :].to(device)
+            self.mask = mask[None, None, :, :]
         self.mixer = mixer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -216,7 +217,7 @@ class AttnMixer(BaseModule):
             (-1, N, 3, self.num_heads, C // self.num_heads)).permute(
                 (2, 0, 3, 1, 4))
         q, k, v = qkv[0] * self.scale, qkv[1], qkv[2]
-        attn = (q.matmul(k.permute(0, 1, 3, 2)))
+        attn = (q.matmul(k.permute(0, 1, 3, 2))).to(device)
         if self.mixer == 'Local':
             attn += self.mask
         attn = F.softmax(attn, dim=-1)
@@ -585,13 +586,13 @@ class SVTRNet(BaseModule):
         self.hardwish = nn.Hardswish()
         self.dropout = nn.Dropout(p=last_drop)
 
-        trunc_normal_(self.absolute_pos_embed)
+        trunc_normal_init(self.absolute_pos_embed, mean=0, std=0.02)
         self.apply(self._init_weights)
         print('------------model weight inits-------------')
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
-            truncated_normal_(m.weight)
+            trunc_normal_init(m.weight, mean=0, std=0.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.zeros_(m.bias)
         if isinstance(m, nn.LayerNorm):
