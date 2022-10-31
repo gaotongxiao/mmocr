@@ -74,7 +74,7 @@ class OverlapPatchEmbed(BaseModule):
                     kernel_size=3,
                     stride=2,
                     padding=1,
-                    bias=False,
+                    bias=True,
                     norm_cfg=dict(type='BN'),
                     act_cfg=dict(type='GELU')))
             _input = _output
@@ -196,7 +196,7 @@ class AttnMixer(BaseModule):
                     mask[h * W + w, h:h + hk, w:w + wk] = 0.
             mask = mask[:, hk // 2:H + hk // 2,
                         wk // 2:W + wk // 2].flatten(1).to(device)
-            mask[mask < -1] = -np.inf
+            mask[mask >= 1] = -np.inf
             self.mask = mask[None, None, :, :]
         self.mixer = mixer
 
@@ -577,10 +577,11 @@ class SVTRNet(BaseModule):
         ])
         self.layer_norm = nn.LayerNorm(self.embed_dims[-1], eps=1e-6)
         self.avgpool = nn.AdaptiveAvgPool2d([1, max_seq_len])
-        self.last_conv = ConvModule(
+        self.last_conv = nn.Conv2d(
             in_channels=embed_dims[2],
             out_channels=self.out_channels,
             kernel_size=1,
+            bias=False,
             stride=1,
             padding=0)
         self.hardwish = nn.Hardswish()

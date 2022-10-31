@@ -56,8 +56,10 @@ class BaseTextRecogModuleLoss(nn.Module):
 
         assert pad_with in ['auto', 'padding', 'end', 'none']
         if pad_with == 'auto':
-            self.pad_idx = self.dictionary.padding_idx or \
-                self.dictionary.end_idx
+            if self.dictionary.padding_idx is not None:
+                self.pad_idx = self.dictionary.padding_idx
+            elif self.dictionary.end_idx is not None:
+                self.pad_idx = self.dictionary.end_idx
         elif pad_with == 'padding':
             self.pad_idx = self.dictionary.padding_idx
         elif pad_with == 'end':
