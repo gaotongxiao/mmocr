@@ -12,7 +12,7 @@ dictionary = dict(
     # dict_file='dicts/english_digits_symbols.txt',
     dict_file='dicts/lower_english_digits.txt',
     with_padding=True,
-    # with_unknown=True,
+    with_unknown=True,
 )
 
 model = dict(

@@ -41,20 +41,13 @@ train_pipeline = [
 
 test_pipeline = [
     dict(type='LoadImageFromFile', file_client_args=file_client_args),
-    # dict(
-    #     type='RescaleToHeight',
-    #     height=64,
-    #     min_width=64,
-    #     max_width=256,
-    #     width_divisor=4),
-    # dict(type='PadToWidth', width=256),
     dict(
         type='RescaleToHeight',
-        height=32,
-        min_width=32,
-        max_width=100,
+        height=64,
+        min_width=64,
+        max_width=256,
         width_divisor=4),
-    dict(type='PadToWidth', width=100),
+    dict(type='PadToWidth', width=256),
     # add loading annotation after ``Resize`` because ground truth
     # does not need to do resize data transform
     dict(type='LoadOCRAnnotations', with_text=True),
@@ -64,8 +57,8 @@ test_pipeline = [
 ]
 
 train_dataloader = dict(
-    batch_size=512,
-    num_workers=16,
+    batch_size=2048,
+    num_workers=32,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(
@@ -98,7 +91,7 @@ optim_wrapper = dict(
     type='OptimWrapper',
     optimizer=dict(
         type='AdamW',
-        lr=5 / (10**4) * 1024 / 2048,
+        lr=5 / (10**4) * 4096 / 512,
         betas=(0.9, 0.99),
         eps=8e-8,
         weight_decay=0.05),
