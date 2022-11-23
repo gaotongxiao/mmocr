@@ -74,7 +74,6 @@ class OverlapPatchEmbed(BaseModule):
                     kernel_size=3,
                     stride=2,
                     padding=1,
-                    bias=True,
                     norm_cfg=dict(type='BN'),
                     act_cfg=dict(type='GELU')))
             _input = _output

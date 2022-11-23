@@ -64,8 +64,6 @@ class Dictionary:
         assert isinstance(dict_file, str)
         self._dict = []
 
-        self._update_dict()
-
         for line_num, line in enumerate(list_from_file(dict_file)):
             line = line.strip('\r\n')
             if len(line) > 1:
@@ -75,6 +73,7 @@ class Dictionary:
             if line != '':
                 self._dict.append(line)
 
+        self._update_dict()
         self._char2idx = {char: idx for idx, char in enumerate(self._dict)}
 
         assert len(set(self._dict)) == len(self._dict), \

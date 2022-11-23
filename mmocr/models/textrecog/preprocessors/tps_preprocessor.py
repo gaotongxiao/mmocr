@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import itertools
+import math
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -14,11 +15,10 @@ from .base_preprocessor import BasePreprocessor
 
 class TPStransform(nn.Module):
     """Implement TPS transform.
-
     This was partially adapted from https://github.com/ayumiymk/aster.pytorch
     Args:
         output_image_size (tuple[int, int]): The size of the output image.
-            Defaults to (32, 128).
+            Defaults to (32, 100).
         num_control_points (int): The number of control points. Defaults to 20.
         margins (tuple[float, float]): The margins for control points to the
             top and down side of the image. Defaults to [0.05, 0.05].
@@ -28,7 +28,7 @@ class TPStransform(nn.Module):
                  output_image_size: Tuple[int, int] = (32, 100),
                  num_control_points: int = 20,
                  margins: Tuple[float, float] = [0.05, 0.05]) -> None:
-        super().__init__()
+        super(TPStransform, self).__init__()
         self.output_image_size = output_image_size
         self.num_control_points = num_control_points
         self.margins = margins
@@ -77,7 +77,6 @@ class TPStransform(nn.Module):
     def forward(self, input: torch.Tensor,
                 source_control_points: torch.Tensor) -> torch.Tensor:
         """Forward function of the TPS block.
-
         Args:
             input (Tensor): The input image.
             source_control_points (Tensor): The control points of the source
@@ -110,7 +109,6 @@ class TPStransform(nn.Module):
                      grid: torch.Tensor,
                      canvas: Optional[torch.Tensor] = None) -> torch.Tensor:
         """Sample the input image at the given grid.
-
         Args:
             input (Tensor): The input image.
             grid (Tensor): The grid to sample the input image.
@@ -130,7 +128,6 @@ class TPStransform(nn.Module):
     def _compute_partial_repr(self, input_points: torch.Tensor,
                               control_points: torch.Tensor) -> torch.Tensor:
         """Compute the partial representation matrix.
-
         Args:
             input_points (Tensor): The input points.
             control_points (Tensor): The control points.
@@ -150,13 +147,11 @@ class TPStransform(nn.Module):
         return repr_matrix
 
     # output_ctrl_pts are specified, according to our task.
-    def _build_output_control_points(self, num_control_points: torch.Tensor,
-                                     margins: Tuple[float,
-                                                    float]) -> torch.Tensor:
+    def _build_output_control_points(
+            self, num_control_points: torch.Tensor,
+            margins: Tuple[float, float]) -> torch.Tensor:
         """Build the output control points.
-
-        The output points will be fix at
-        top and down side of the image.
+        The output points will be fix at top and down side of the image.
         Args:
             num_control_points (Tensor): The number of control points.
             margins (Tuple[float, float]): The margins for control points to
@@ -172,8 +167,6 @@ class TPStransform(nn.Module):
         ctrl_pts_y_bottom = np.ones(num_ctrl_pts_per_side) * (1.0 - margin_y)
         ctrl_pts_top = np.stack([ctrl_pts_x, ctrl_pts_y_top], axis=1)
         ctrl_pts_bottom = np.stack([ctrl_pts_x, ctrl_pts_y_bottom], axis=1)
-        # ctrl_pts_top = ctrl_pts_top[1:-1,:]
-        # ctrl_pts_bottom = ctrl_pts_bottom[1:-1,:]
         output_ctrl_pts_arr = np.concatenate([ctrl_pts_top, ctrl_pts_bottom],
                                              axis=0)
         output_ctrl_pts = torch.Tensor(output_ctrl_pts_arr)
@@ -184,7 +177,6 @@ class TPStransform(nn.Module):
 class STN(BasePreprocessor):
     """Implement STN module in `ASTER: An Attentional Scene Text Recognizer
     with Flexible Rectification.
-
     <https://ieeexplore.ieee.org/abstract/document/8395027/`
     Args:
         in_channels (int): The number of input channels.
@@ -203,11 +195,8 @@ class STN(BasePreprocessor):
                  output_image_size: Tuple[int, int] = (32, 100),
                  num_control_points: int = 20,
                  margins: Tuple[float, float] = [0.05, 0.05],
-                 init_cfg: Optional[Union[Dict, List[Dict]]] = [
-                     dict(type='Xavier', layer='Conv2d'),
-                     dict(type='Constant', val=1, layer='BatchNorm2d'),
-                 ]):
-        super().__init__(init_cfg=init_cfg)
+                 init_cfg: Optional[Union[Dict, List[Dict]]] = None):
+        super(BasePreprocessor, self).__init__(init_cfg=init_cfg)
         self.resized_image_size = resized_image_size
         self.num_control_points = num_control_points
         self.tps = TPStransform(output_image_size, num_control_points, margins)
@@ -229,13 +218,14 @@ class STN(BasePreprocessor):
             nn.Linear(2 * 256, 512), nn.BatchNorm1d(512),
             nn.ReLU(inplace=True))
         self.stn_fc2 = nn.Linear(512, num_control_points * 2)
+        self.init_weight(self.stn_convnet)
+        self.init_weight(self.stn_fc1)
         self.init_stn(self.stn_fc2)
 
     def init_stn(self, stn_fc2: nn.Linear) -> None:
         """Initialize the output linear layer of stn, so that the initial
         source point will be at the top and down side of the image, which will
         help to optimize.
-
         Args:
             stn_fc2 (nn.Linear): The output linear layer of stn.
         """
@@ -251,9 +241,22 @@ class STN(BasePreprocessor):
         stn_fc2.weight.data.zero_()
         stn_fc2.bias.data = torch.Tensor(ctrl_points).view(-1)
 
+    def init_weight(self, module):
+        for m in module.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
+                if m.bias is not None:
+                    m.bias.data.zero_()
+            elif isinstance(m, nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
+            elif isinstance(m, nn.Linear):
+                m.weight.data.normal_(0, 0.001)
+                m.bias.data.zero_()
+
     def forward(self, img: torch.Tensor) -> torch.Tensor:
         """Forward function of STN.
-
         Args:
             img (Tensor): The input image tensor.
         Returns:

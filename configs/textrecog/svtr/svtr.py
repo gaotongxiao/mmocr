@@ -27,13 +27,59 @@ train_pipeline = [
         ignore_empty=True,
         min_size=5),
     dict(type='LoadOCRAnnotations', with_text=True),
-    dict(
-        type='RescaleToHeight',
-        height=64,
-        min_width=64,
-        max_width=256,
-        width_divisor=4),
-    dict(type='PadToWidth', width=256),
+    dict(type='Resize', scale=(256, 64)),
+    # dict(
+    #     type='RandomApply',
+    #     prob=0.5,
+    #     transforms=[
+    #         dict(
+    #             type='RandomChoice',
+    #             transforms=[
+    #                 dict(
+    #                     type='RandomRotate',
+    #                     max_angle=15,
+    #                 ),
+    #                 dict(
+    #                     type='TorchVisionWrapper',
+    #                     op='RandomAffine',
+    #                     degrees=15,
+    #                     translate=(0.3, 0.3),
+    #                     scale=(0.5, 2.),
+    #                     shear=(-45, 45),
+    #                 ),
+    #                 dict(
+    #                     type='TorchVisionWrapper',
+    #                     op='RandomPerspective',
+    #                     distortion_scale=0.5,
+    #                     p=1,
+    #                 ),
+    #             ])
+    #     ],
+    # ),
+    # dict(
+    #     type='RandomApply',
+    #     prob=0.25,
+    #     transforms=[
+    #         dict(type='PyramidRescale'),
+    #         dict(
+    #             type='mmdet.Albu',
+    #             transforms=[
+    #                 dict(type='GaussNoise', var_limit=(20, 20), p=0.5),
+    #                 dict(type='MotionBlur', p=0.5),
+    #             ]),
+    #     ]),
+    # dict(
+    #     type='RandomApply',
+    #     prob=0.25,
+    #     transforms=[
+    #         dict(
+    #             type='TorchVisionWrapper',
+    #             op='ColorJitter',
+    #             brightness=0.5,
+    #             saturation=0.5,
+    #             contrast=0.5,
+    #             hue=0.1),
+    #     ]),
     dict(
         type='PackTextRecogInputs',
         meta_keys=('img_path', 'ori_shape', 'img_shape', 'valid_ratio'))
@@ -41,15 +87,7 @@ train_pipeline = [
 
 test_pipeline = [
     dict(type='LoadImageFromFile', file_client_args=file_client_args),
-    dict(
-        type='RescaleToHeight',
-        height=64,
-        min_width=64,
-        max_width=256,
-        width_divisor=4),
-    dict(type='PadToWidth', width=256),
-    # add loading annotation after ``Resize`` because ground truth
-    # does not need to do resize data transform
+    dict(type='Resize', scale=(256, 64)),
     dict(type='LoadOCRAnnotations', with_text=True),
     dict(
         type='PackTextRecogInputs',
@@ -57,9 +95,10 @@ test_pipeline = [
 ]
 
 train_dataloader = dict(
-    batch_size=2048,
-    num_workers=32,
+    batch_size=512,
+    num_workers=24,
     persistent_workers=True,
+    pin_memory=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(
         type='ConcatDataset', datasets=train_list, pipeline=train_pipeline))
@@ -68,6 +107,7 @@ val_dataloader = dict(
     batch_size=1,
     num_workers=8,
     persistent_workers=True,
+    pin_memory=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
     dataset=dict(
@@ -80,8 +120,8 @@ val_evaluator = dict(
     metrics=[
         dict(
             type='WordMetric',
-            mode=['exact', 'ignore_case', 'ignore_case_symbol']),
-        dict(type='CharMetric')
+            mode=['ignore_case_symbol']),
+        # dict(type='CharMetric')
     ],
     dataset_prefixes=['CUTE80', 'IIIT5K', 'SVT', 'SVTP', 'IC13', 'IC15'])
 test_evaluator = val_evaluator
@@ -91,14 +131,15 @@ optim_wrapper = dict(
     type='OptimWrapper',
     optimizer=dict(
         type='AdamW',
-        lr=5 / (10**4) * 4096 / 512,
+        lr=5 / (10**4) * 2048 / 2048,
         betas=(0.9, 0.99),
         eps=8e-8,
-        weight_decay=0.05),
-    clip_grad=dict(max_norm=1e-3))
+        weight_decay=0.05))
 param_scheduler = [
     dict(
-        type='LinearLR', start_factor=0.5, end_factor=1., end=2, verbose=False)
+        type='LinearLR', start_factor=0.5, end_factor=1., end=2, verbose=False, convert_to_iter_based=True),
+    dict(
+        type='CosineAnnealingLR', T_max=19, begin=2, end=20, verbose=False, convert_to_iter_based=True),
 ]
 
 test_evaluator = val_evaluator
