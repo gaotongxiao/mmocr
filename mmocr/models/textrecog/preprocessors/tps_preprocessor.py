@@ -116,12 +116,12 @@ class TPStransform(nn.Module):
         Returns:
             (Tensor): The sampled image.
         """
-        output = F.grid_sample(input, grid)
+        output = F.grid_sample(input, grid, align_corners=True)
         if canvas is None:
             return output
         else:
             input_mask = input.data.new(input.size()).fill_(1)
-            output_mask = F.grid_sample(input_mask, grid)
+            output_mask = F.grid_sample(input_mask, grid, align_corners=True)
             padded_output = output * output_mask + canvas * (1 - output_mask)
             return padded_output
 
@@ -201,17 +201,18 @@ class STN(BasePreprocessor):
         self.num_control_points = num_control_points
         self.tps = TPStransform(output_image_size, num_control_points, margins)
         self.stn_convnet = nn.Sequential(
-            ConvModule(in_channels, 32, 3, 1, 1, norm_cfg=dict(type='BN')),
+            ConvModule(
+                in_channels, 32, 3, 1, 1, norm_cfg=dict(type='BN'), bias=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            ConvModule(32, 64, 3, 1, 1, norm_cfg=dict(type='BN')),
+            ConvModule(32, 64, 3, 1, 1, norm_cfg=dict(type='BN'), bias=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            ConvModule(64, 128, 3, 1, 1, norm_cfg=dict(type='BN')),
+            ConvModule(64, 128, 3, 1, 1, norm_cfg=dict(type='BN'), bias=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            ConvModule(128, 256, 3, 1, 1, norm_cfg=dict(type='BN')),
+            ConvModule(128, 256, 3, 1, 1, norm_cfg=dict(type='BN'), bias=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            ConvModule(256, 256, 3, 1, 1, norm_cfg=dict(type='BN')),
+            ConvModule(256, 256, 3, 1, 1, norm_cfg=dict(type='BN'), bias=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            ConvModule(256, 256, 3, 1, 1, norm_cfg=dict(type='BN')),
+            ConvModule(256, 256, 3, 1, 1, norm_cfg=dict(type='BN'), bias=True),
         )
 
         self.stn_fc1 = nn.Sequential(
