@@ -201,18 +201,17 @@ class STN(BasePreprocessor):
         self.num_control_points = num_control_points
         self.tps = TPStransform(output_image_size, num_control_points, margins)
         self.stn_convnet = nn.Sequential(
-            ConvModule(
-                in_channels, 32, 3, 1, 1, norm_cfg=dict(type='BN'), bias=True),
+            ConvModule(in_channels, 32, 3, 1, 1, norm_cfg=dict(type='BN')),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            ConvModule(32, 64, 3, 1, 1, norm_cfg=dict(type='BN'), bias=True),
+            ConvModule(32, 64, 3, 1, 1, norm_cfg=dict(type='BN')),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            ConvModule(64, 128, 3, 1, 1, norm_cfg=dict(type='BN'), bias=True),
+            ConvModule(64, 128, 3, 1, 1, norm_cfg=dict(type='BN')),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            ConvModule(128, 256, 3, 1, 1, norm_cfg=dict(type='BN'), bias=True),
+            ConvModule(128, 256, 3, 1, 1, norm_cfg=dict(type='BN')),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            ConvModule(256, 256, 3, 1, 1, norm_cfg=dict(type='BN'), bias=True),
+            ConvModule(256, 256, 3, 1, 1, norm_cfg=dict(type='BN')),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            ConvModule(256, 256, 3, 1, 1, norm_cfg=dict(type='BN'), bias=True),
+            ConvModule(256, 256, 3, 1, 1, norm_cfg=dict(type='BN')),
         )
 
         self.stn_fc1 = nn.Sequential(
