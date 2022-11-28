@@ -13,6 +13,7 @@ dictionary = dict(
     dict_file='dicts/lower_english_digits.txt',
     with_padding=True,
     with_unknown=True,
+    unknown_token=None,
 )
 
 model = dict(
@@ -46,4 +47,4 @@ model = dict(
         postprocessor=dict(type='CTCPostProcessor'),
         dictionary=dictionary),
     data_preprocessor=dict(
-        type='TextRecogDataPreprocessor', mean=[127], std=[127]))
+        type='TextRecogDataPreprocessor', mean=[127.5], std=[127.5]))
