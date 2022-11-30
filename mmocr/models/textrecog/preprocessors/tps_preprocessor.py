@@ -15,6 +15,7 @@ from .base_preprocessor import BasePreprocessor
 
 class TPStransform(nn.Module):
     """Implement TPS transform.
+
     This was partially adapted from https://github.com/ayumiymk/aster.pytorch
     Args:
         output_image_size (tuple[int, int]): The size of the output image.
@@ -77,6 +78,7 @@ class TPStransform(nn.Module):
     def forward(self, input: torch.Tensor,
                 source_control_points: torch.Tensor) -> torch.Tensor:
         """Forward function of the TPS block.
+
         Args:
             input (Tensor): The input image.
             source_control_points (Tensor): The control points of the source
@@ -109,6 +111,7 @@ class TPStransform(nn.Module):
                      grid: torch.Tensor,
                      canvas: Optional[torch.Tensor] = None) -> torch.Tensor:
         """Sample the input image at the given grid.
+
         Args:
             input (Tensor): The input image.
             grid (Tensor): The grid to sample the input image.
@@ -128,6 +131,7 @@ class TPStransform(nn.Module):
     def _compute_partial_repr(self, input_points: torch.Tensor,
                               control_points: torch.Tensor) -> torch.Tensor:
         """Compute the partial representation matrix.
+
         Args:
             input_points (Tensor): The input points.
             control_points (Tensor): The control points.
@@ -147,10 +151,11 @@ class TPStransform(nn.Module):
         return repr_matrix
 
     # output_ctrl_pts are specified, according to our task.
-    def _build_output_control_points(
-            self, num_control_points: torch.Tensor,
-            margins: Tuple[float, float]) -> torch.Tensor:
+    def _build_output_control_points(self, num_control_points: torch.Tensor,
+                                     margins: Tuple[float,
+                                                    float]) -> torch.Tensor:
         """Build the output control points.
+
         The output points will be fix at top and down side of the image.
         Args:
             num_control_points (Tensor): The number of control points.
@@ -177,6 +182,7 @@ class TPStransform(nn.Module):
 class STN(BasePreprocessor):
     """Implement STN module in `ASTER: An Attentional Scene Text Recognizer
     with Flexible Rectification.
+
     <https://ieeexplore.ieee.org/abstract/document/8395027/`
     Args:
         in_channels (int): The number of input channels.
@@ -226,6 +232,7 @@ class STN(BasePreprocessor):
         """Initialize the output linear layer of stn, so that the initial
         source point will be at the top and down side of the image, which will
         help to optimize.
+
         Args:
             stn_fc2 (nn.Linear): The output linear layer of stn.
         """
@@ -257,6 +264,7 @@ class STN(BasePreprocessor):
 
     def forward(self, img: torch.Tensor) -> torch.Tensor:
         """Forward function of STN.
+
         Args:
             img (Tensor): The input image tensor.
         Returns:

@@ -253,9 +253,11 @@ class PadToWidth(BaseTransform):
         repr_str += f'pad_cfg={self.pad_cfg})'
         return repr_str
 
+
 @TRANSFORMS.register_module()
 class TextImageAugmentations(BaseTransform):
-    """https://github.com/RubanSeven/Text-Image-Augmentation-python/blob/master/augment.py  # noqa
+    """https://github.com/RubanSeven/Text-Image-Augmentation-
+    python/blob/master/augment.py  # noqa.
 
     Required Keys:
 
@@ -290,9 +292,11 @@ class TextImageAugmentations(BaseTransform):
         """
         h, w = results['img'].shape[:2]
         if h >= 20 and w >= 20:
-            results['img'] = self.tia_distort(results['img'], random.randint(3, 6))
-            results['img'] = self.tia_stretch(results['img'], random.randint(3, 6))
-        results['img'] = self.tia_perspective(results['img']))
+            results['img'] = self.tia_distort(results['img'],
+                                              random.randint(3, 6))
+            results['img'] = self.tia_stretch(results['img'],
+                                              random.randint(3, 6))
+        results['img'] = self.tia_perspective(results['img'])
         return results
 
     # def __repr__(self) -> str:
@@ -300,7 +304,7 @@ class TextImageAugmentations(BaseTransform):
     #     repr_str += f'(width={self.width}, '
     #     repr_str += f'pad_cfg={self.pad_cfg})'
     #     return repr_str
-    
+
     def tia_distort(self, src, segment=4):
         img_h, img_w = src.shape[:2]
 
@@ -317,9 +321,12 @@ class TextImageAugmentations(BaseTransform):
 
         dst_pts.append([np.random.randint(thresh), np.random.randint(thresh)])
         dst_pts.append(
-            [img_w - np.random.randint(thresh), np.random.randint(thresh)])
-        dst_pts.append(
-            [img_w - np.random.randint(thresh), img_h - np.random.randint(thresh)])
+            [img_w - np.random.randint(thresh),
+             np.random.randint(thresh)])
+        dst_pts.append([
+            img_w - np.random.randint(thresh),
+            img_h - np.random.randint(thresh)
+        ])
         dst_pts.append(
             [np.random.randint(thresh), img_h - np.random.randint(thresh)])
 
@@ -341,7 +348,6 @@ class TextImageAugmentations(BaseTransform):
         dst = trans.generate()
 
         return dst
-
 
     def tia_stretch(self, src, segment=4):
         img_h, img_w = src.shape[:2]
@@ -376,7 +382,6 @@ class TextImageAugmentations(BaseTransform):
 
         return dst
 
-
     def tia_perspective(self, src):
         img_h, img_w = src.shape[:2]
 
@@ -399,9 +404,16 @@ class TextImageAugmentations(BaseTransform):
         dst = trans.generate()
 
         return dst
-    
+
     class WarpMLS:
-        def __init__(self, src, src_pts, dst_pts, dst_w, dst_h, trans_ratio=1.):
+
+        def __init__(self,
+                     src,
+                     src_pts,
+                     dst_pts,
+                     dst_w,
+                     dst_h,
+                     trans_ratio=1.):
             self.src = src
             self.src_pts = src_pts
             self.dst_pts = dst_pts
@@ -415,8 +427,9 @@ class TextImageAugmentations(BaseTransform):
 
         @staticmethod
         def __bilinear_interp(x, y, v11, v12, v21, v22):
-            return (v11 * (1 - y) + v12 * y) * (1 - x) + (v21 *
-                                                        (1 - y) + v22 * y) * x
+            return (v11 *
+                    (1 - y) + v12 * y) * (1 - x) + (v21 *
+                                                    (1 - y) + v22 * y) * x
 
         def generate(self):
             self.calc_delta()
@@ -453,9 +466,10 @@ class TextImageAugmentations(BaseTransform):
                         if i == self.dst_pts[k][0] and j == self.dst_pts[k][1]:
                             break
 
-                        w[k] = 1. / (
-                            (i - self.dst_pts[k][0]) * (i - self.dst_pts[k][0]) +
-                            (j - self.dst_pts[k][1]) * (j - self.dst_pts[k][1]))
+                        w[k] = 1. / ((i - self.dst_pts[k][0]) *
+                                     (i - self.dst_pts[k][0]) +
+                                     (j - self.dst_pts[k][1]) *
+                                     (j - self.dst_pts[k][1]))
 
                         sw += w[k]
                         swp = swp + w[k] * np.array(self.dst_pts[k])
@@ -467,7 +481,8 @@ class TextImageAugmentations(BaseTransform):
 
                         miu_s = 0
                         for k in range(self.pt_count):
-                            if i == self.dst_pts[k][0] and j == self.dst_pts[k][1]:
+                            if i == self.dst_pts[k][0] and j == self.dst_pts[
+                                    k][1]:
                                 continue
                             pt_i = self.dst_pts[k] - pstar
                             miu_s += w[k] * np.sum(pt_i * pt_i)
@@ -476,7 +491,8 @@ class TextImageAugmentations(BaseTransform):
                         cur_pt_j = np.array([-cur_pt[1], cur_pt[0]])
 
                         for k in range(self.pt_count):
-                            if i == self.dst_pts[k][0] and j == self.dst_pts[k][1]:
+                            if i == self.dst_pts[k][0] and j == self.dst_pts[
+                                    k][1]:
                                 continue
 
                             pt_i = self.dst_pts[k] - pstar
@@ -518,12 +534,20 @@ class TextImageAugmentations(BaseTransform):
 
                     di = np.reshape(np.arange(h), (-1, 1))
                     dj = np.reshape(np.arange(w), (1, -1))
-                    delta_x = self.__bilinear_interp(
-                        di / h, dj / w, self.rdx[i, j], self.rdx[i, nj],
-                        self.rdx[ni, j], self.rdx[ni, nj])
-                    delta_y = self.__bilinear_interp(
-                        di / h, dj / w, self.rdy[i, j], self.rdy[i, nj],
-                        self.rdy[ni, j], self.rdy[ni, nj])
+                    delta_x = self.__bilinear_interp(di / h, dj / w,
+                                                     self.rdx[i,
+                                                              j], self.rdx[i,
+                                                                           nj],
+                                                     self.rdx[ni,
+                                                              j], self.rdx[ni,
+                                                                           nj])
+                    delta_y = self.__bilinear_interp(di / h, dj / w,
+                                                     self.rdy[i,
+                                                              j], self.rdy[i,
+                                                                           nj],
+                                                     self.rdy[ni,
+                                                              j], self.rdy[ni,
+                                                                           nj])
                     nx = j + dj + delta_x * self.trans_ratio
                     ny = i + di + delta_y * self.trans_ratio
                     nx = np.clip(nx, 0, src_w - 1)
@@ -534,14 +558,18 @@ class TextImageAugmentations(BaseTransform):
                     nyi1 = np.array(np.ceil(ny), dtype=np.int32)
 
                     if len(self.src.shape) == 3:
-                        x = np.tile(np.expand_dims(ny - nyi, axis=-1), (1, 1, 3))
-                        y = np.tile(np.expand_dims(nx - nxi, axis=-1), (1, 1, 3))
+                        x = np.tile(
+                            np.expand_dims(ny - nyi, axis=-1), (1, 1, 3))
+                        y = np.tile(
+                            np.expand_dims(nx - nxi, axis=-1), (1, 1, 3))
                     else:
                         x = ny - nyi
                         y = nx - nxi
-                    dst[i:i + h, j:j + w] = self.__bilinear_interp(
-                        x, y, self.src[nyi, nxi], self.src[nyi, nxi1],
-                        self.src[nyi1, nxi], self.src[nyi1, nxi1])
+                    dst[i:i + h, j:j +
+                        w] = self.__bilinear_interp(x, y, self.src[nyi, nxi],
+                                                    self.src[nyi, nxi1],
+                                                    self.src[nyi1, nxi],
+                                                    self.src[nyi1, nxi1])
 
             dst = np.clip(dst, 0, 255)
             dst = np.array(dst, dtype=np.uint8)
@@ -551,8 +579,7 @@ class TextImageAugmentations(BaseTransform):
 
 @TRANSFORMS.register_module()
 class TextRecogRandomCrop(BaseTransform):
-    """
-    Required Keys:
+    """Required Keys:
 
     - img
 
@@ -573,10 +600,11 @@ class TextRecogRandomCrop(BaseTransform):
         **resize_kwargs: Other keyword arguments for the ``resize_type``.
     """
 
-    def __init__(self,
-                 top_min: int = 1,
-                 top_max: int = 8,
-                 ) -> None:
+    def __init__(
+        self,
+        top_min: int = 1,
+        top_max: int = 8,
+    ) -> None:
         super().__init__()
         self.top_min = top_min
         self.top_max = top_max
@@ -613,8 +641,7 @@ class TextRecogRandomCrop(BaseTransform):
 
 @TRANSFORMS.register_module()
 class TextRecogImageContentJitter(BaseTransform):
-    """
-    Required Keys:
+    """Required Keys:
 
     - img
 
@@ -652,8 +679,7 @@ class TextRecogImageContentJitter(BaseTransform):
 
 @TRANSFORMS.register_module()
 class TextRecogReverse(BaseTransform):
-    """
-    Required Keys:
+    """Required Keys:
 
     - img
 

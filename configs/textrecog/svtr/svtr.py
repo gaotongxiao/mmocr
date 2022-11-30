@@ -32,33 +32,29 @@ train_pipeline = [
         type='RandomApply',
         prob=0.4,
         transforms=[
-            dict(
-                type='TextImageAugmentations',
-            ),
-                #     dict(
-                #         type='TorchVisionWrapper',
-                #         op='RandomAffine',
-                #         degrees=15,
-                #         translate=(0.3, 0.3),
-                #         scale=(0.5, 2.),
-                #         shear=(-45, 45),
-                #     ),
-                #     dict(
-                #         type='TorchVisionWrapper',
-                #         op='RandomPerspective',
-                #         distortion_scale=0.5,
-                #         p=1,
-                #     ),
-                # ])
+            dict(type='TextImageAugmentations', ),
+            #     dict(
+            #         type='TorchVisionWrapper',
+            #         op='RandomAffine',
+            #         degrees=15,
+            #         translate=(0.3, 0.3),
+            #         scale=(0.5, 2.),
+            #         shear=(-45, 45),
+            #     ),
+            #     dict(
+            #         type='TorchVisionWrapper',
+            #         op='RandomPerspective',
+            #         distortion_scale=0.5,
+            #         p=1,
+            #     ),
+            # ])
         ],
     ),
     dict(
         type='RandomApply',
         prob=0.4,
         transforms=[
-            dict(
-                type='TextRecogRandomCrop',
-            ),
+            dict(type='TextRecogRandomCrop', ),
         ],
     ),
     dict(
@@ -70,7 +66,7 @@ train_pipeline = [
                 op='GaussianBlur',
                 kernel_size=5,
                 sigma=1,
-                ),
+            ),
         ],
     ),
     dict(
@@ -89,27 +85,21 @@ train_pipeline = [
         type='RandomApply',
         prob=0.4,
         transforms=[
-            dict(
-                type='TextRecogImageContentJitter',
-            ),
+            dict(type='TextRecogImageContentJitter', ),
         ],
     ),
     dict(
         type='RandomApply',
         prob=0.4,
         transforms=[
-            dict(
-                type='TextRecogImageContentJitter',
-            ),
+            dict(type='TextRecogImageContentJitter', ),
         ],
     ),
     dict(
         type='RandomApply',
         prob=0.4,
         transforms=[
-            dict(
-                type='TextRecogReverse',
-            ),
+            dict(type='TextRecogReverse', ),
         ],
     ),
     dict(
@@ -150,9 +140,7 @@ test_dataloader = val_dataloader
 val_evaluator = dict(
     type='MultiDatasetsEvaluator',
     metrics=[
-        dict(
-            type='WordMetric',
-            mode=['ignore_case_symbol']),
+        dict(type='WordMetric', mode=['ignore_case_symbol']),
         # dict(type='CharMetric')
     ],
     dataset_prefixes=['CUTE80', 'IIIT5K', 'SVT', 'SVTP', 'IC13', 'IC15'])
@@ -169,9 +157,19 @@ optim_wrapper = dict(
         weight_decay=0.05))
 param_scheduler = [
     dict(
-        type='LinearLR', start_factor=0.5, end_factor=1., end=2, verbose=False, convert_to_iter_based=True),
+        type='LinearLR',
+        start_factor=0.5,
+        end_factor=1.,
+        end=2,
+        verbose=False,
+        convert_to_iter_based=True),
     dict(
-        type='CosineAnnealingLR', T_max=19, begin=2, end=20, verbose=False, convert_to_iter_based=True),
+        type='CosineAnnealingLR',
+        T_max=19,
+        begin=2,
+        end=20,
+        verbose=False,
+        convert_to_iter_based=True),
 ]
 
 test_evaluator = val_evaluator
