@@ -296,7 +296,10 @@ class TextImageAugmentations(BaseTransform):
                                               random.randint(3, 6))
             results['img'] = self.tia_stretch(results['img'],
                                               random.randint(3, 6))
-        results['img'] = self.tia_perspective(results['img'])
+        h, w = results['img'].shape[:2]
+        if h >= 5 and w >= 5:
+            results['img'] = self.tia_perspective(results['img'])
+        results['img_shape'] = results['img'].shape[:2]
         return results
 
     # def __repr__(self) -> str:
@@ -499,10 +502,12 @@ class TextImageAugmentations(BaseTransform):
                             pt_j = np.array([-pt_i[1], pt_i[0]])
 
                             tmp_pt = np.zeros(2, dtype=np.float32)
-                            tmp_pt[0] = np.sum(pt_i * cur_pt) * self.src_pts[k][0] - \
-                                        np.sum(pt_j * cur_pt) * self.src_pts[k][1]
-                            tmp_pt[1] = -np.sum(pt_i * cur_pt_j) * self.src_pts[k][0] + \
-                                        np.sum(pt_j * cur_pt_j) * self.src_pts[k][1]
+                            tmp_pt[0] = (
+                                np.sum(pt_i * cur_pt) * self.src_pts[k][0] -
+                                np.sum(pt_j * cur_pt) * self.src_pts[k][1])
+                            tmp_pt[1] = (
+                                -np.sum(pt_i * cur_pt_j) * self.src_pts[k][0] +
+                                np.sum(pt_j * cur_pt_j) * self.src_pts[k][1])
                             tmp_pt *= (w[k] / miu_s)
                             new_pt += tmp_pt
 
@@ -664,7 +669,7 @@ class TextRecogImageContentJitter(BaseTransform):
             thres = min(h, w)
             jitter_range = int(random.random() * thres * 0.01)
             for i in range(jitter_range):
-                results['img'][i:, i:, :] = results['img'][:w - i, :h - i, :]
+                results['img'][i:, i:, :] = results['img'][:h - i, :w - i, :]
         return results
 
     # def __repr__(self) -> str:

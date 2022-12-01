@@ -6,6 +6,7 @@ import imgaug
 import imgaug.augmenters as iaa
 import numpy as np
 import torchvision.transforms as torchvision_transforms
+from mmcv.transforms import Compose
 from mmcv.transforms.base import BaseTransform
 from PIL import Image
 
@@ -283,3 +284,18 @@ class TorchVisionWrapper(BaseTransform):
             repr_str += f', {k} = {v}'
         repr_str += ')'
         return repr_str
+
+
+@TRANSFORMS.register_module()
+class ConditionApply(BaseTransform):
+
+    def __init__(self, transforms, condition):
+        self.condition = condition
+        self.transforms = Compose(transforms)
+
+    def transform(self, results: Dict) -> Optional[Dict]:
+        """Randomly apply the transform."""
+        if eval(self.condition):
+            return self.transforms(results)  # type: ignore
+        else:
+            return results

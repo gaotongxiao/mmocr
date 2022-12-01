@@ -27,27 +27,11 @@ train_pipeline = [
         ignore_empty=True,
         min_size=5),
     dict(type='LoadOCRAnnotations', with_text=True),
-    dict(type='Resize', scale=(256, 64)),
     dict(
         type='RandomApply',
         prob=0.4,
         transforms=[
             dict(type='TextImageAugmentations', ),
-            #     dict(
-            #         type='TorchVisionWrapper',
-            #         op='RandomAffine',
-            #         degrees=15,
-            #         translate=(0.3, 0.3),
-            #         scale=(0.5, 2.),
-            #         shear=(-45, 45),
-            #     ),
-            #     dict(
-            #         type='TorchVisionWrapper',
-            #         op='RandomPerspective',
-            #         distortion_scale=0.5,
-            #         p=1,
-            #     ),
-            # ])
         ],
     ),
     dict(
@@ -92,16 +76,10 @@ train_pipeline = [
         type='RandomApply',
         prob=0.4,
         transforms=[
-            dict(type='TextRecogImageContentJitter', ),
-        ],
-    ),
-    dict(
-        type='RandomApply',
-        prob=0.4,
-        transforms=[
             dict(type='TextRecogReverse', ),
         ],
     ),
+    dict(type='Resize', scale=(256, 64)),
     dict(
         type='PackTextRecogInputs',
         meta_keys=('img_path', 'ori_shape', 'img_shape', 'valid_ratio'))
