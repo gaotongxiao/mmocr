@@ -76,6 +76,15 @@ train_pipeline = [
         type='RandomApply',
         prob=0.4,
         transforms=[
+            dict(
+                type='ImgAugWrapper',
+                args=[dict(cls='AdditiveGaussianNoise', scale=0.1**0.5)]),
+        ],
+    ),
+    dict(
+        type='RandomApply',
+        prob=0.4,
+        transforms=[
             dict(type='TextRecogReverse', ),
         ],
     ),

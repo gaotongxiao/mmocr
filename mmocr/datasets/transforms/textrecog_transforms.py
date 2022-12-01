@@ -627,11 +627,13 @@ class TextRecogRandomCrop(BaseTransform):
         top_crop = int(random.randint(self.top_min, self.top_max))
         top_crop = min(top_crop, h - 1)
         ratio = random.randint(0, 1)
+        img = results['img'].copy()
         if ratio:
-            results['img'] = results['img'][top_crop:h, :, :]
+            img = img[top_crop:h, :, :]
         else:
-            results['img'] = results['img'][0:h - top_crop, :, :]
-        results['img_shape'] = results['img'].shape[:2]
+            img = img[0:h - top_crop, :, :]
+        results['img_shape'] = img.shape[:2]
+        results['img'] = img
         return results
 
     # def __repr__(self) -> str:
@@ -665,11 +667,13 @@ class TextRecogImageContentJitter(BaseTransform):
             dict: Resized results.
         """
         h, w = results['img'].shape[:2]
+        img = results['img'].copy()
         if h > 10 and w > 10:
             thres = min(h, w)
             jitter_range = int(random.random() * thres * 0.01)
             for i in range(jitter_range):
-                results['img'][i:, i:, :] = results['img'][:h - i, :w - i, :]
+                img[i:, i:, :] = img[:h - i, :w - i, :]
+        results['img'] = img
         return results
 
     # def __repr__(self) -> str:
@@ -702,5 +706,5 @@ class TextRecogReverse(BaseTransform):
         Returns:
             dict: Resized results.
         """
-        results['img'] = 255. - results['img']
+        results['img'] = 255. - results['img'].copy()
         return results
