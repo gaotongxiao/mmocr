@@ -173,7 +173,7 @@ class AttnMixer(BaseModule):
                     mask[h * W + w, h:h + hk, w:w + wk] = 0.
             mask = mask[:, hk // 2:H + hk // 2, wk // 2:W + wk // 2].flatten(1)
             mask[mask >= 1] = -np.inf
-            self.mask = mask[None, None, :, :].to(self.qkv.weight.device)
+            self.register_buffer('mask', mask[None, None, :, :])
         self.mixer = mixer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
