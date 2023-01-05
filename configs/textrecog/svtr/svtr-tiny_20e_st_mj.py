@@ -12,6 +12,12 @@ _base_ = [
     '../_base_/schedules/schedule_adam_base.py',
 ]
 
+# _base_.model.encoder.init_cfg = dict(
+#     type='Pretrained',
+#     prefix='backbone.',
+#     checkpoint='/home/gaotong/ckpt_migration_script/svtr/tiny/epoch_16.pth',
+# )
+
 train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=20, val_interval=1)
 
 optim_wrapper = dict(
@@ -136,6 +142,13 @@ test_list = [
     _base_.icdar2013_textrecog_test, _base_.icdar2015_textrecog_test
 ]
 
+# val_evaluator = dict(
+#     dataset_prefixes=['CUTE80', 'IIIT5K', 'SVT', 'SVTP', 'IC13', 'IC15'])
+# test_evaluator = val_evaluator
+val_evaluator = dict(
+    type='WordMetric', mode=['ignore_case_symbol'], _delete_=True)
+test_evaluator = val_evaluator
+
 train_dataloader = dict(
     batch_size=512,
     num_workers=24,
@@ -145,6 +158,17 @@ train_dataloader = dict(
     dataset=dict(
         type='ConcatDataset', datasets=train_list, pipeline=train_pipeline))
 
+# val_dataloader = dict(
+#     batch_size=128,
+#     num_workers=8,
+#     persistent_workers=True,
+#     pin_memory=True,
+#     drop_last=False,
+#     sampler=dict(type='DefaultSampler', shuffle=False),
+#     dataset=dict(
+#         type='ConcatDataset', datasets=test_list, pipeline=test_pipeline))
+# _base_.cute80_textrecog_test.indices = 1
+_base_.cute80_textrecog_test.pipeline = test_pipeline
 val_dataloader = dict(
     batch_size=128,
     num_workers=8,
@@ -152,7 +176,8 @@ val_dataloader = dict(
     pin_memory=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
-    dataset=dict(
-        type='ConcatDataset', datasets=test_list, pipeline=test_pipeline))
+    # dataset=dict(
+    #     type='ConcatDataset', datasets=test_list, pipeline=test_pipeline))
+    dataset=_base_.cute80_textrecog_test)
 
 test_dataloader = val_dataloader
